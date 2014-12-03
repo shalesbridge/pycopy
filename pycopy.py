@@ -1,22 +1,42 @@
 #!/usr/bin/env python
 
 import os
+import shutil
 import six
 import collections
 
     
 
-def _os_walk_pycopy(src, dst, xform_fn=lambda x, y: y):
-    dirs = collections.deque()
-    files = collections.deque()
-    todo = collections.deque(os.listdir(src))
+def _os_walk_pycopy(
+    src, dst, 
+    src_listdir_fn=os.listdir,
+    copy_fn=shutil.copy,
+    xform_fn=lambda src_base, src_dirname, src_basename: src_basename
+):
+    todo = collections.deque(('',))
+        
     while len(todo) > 0:
         x = todo.pop()
-        if os.path.isdir(os.path.join(src, x)):
-            d = os.path.join(x)
-            if xform_fn
+        #if xform_fn(src, x['dirname'], x['basename']) == None:
+        #    continue
+        filespec = os.path.join(src, x['dirname'], x['basename'])
+        if os.path.isdir(filespec):
+            for y in src_listdir_fn(filespec):
+                todo.append( 
+                    { 
+                        'dirname': os.path.join(x['dirname'], x['basename']),
+                        'basename': y
+                    }
         else:
-            todo.append(os.path.join(src, x))
+            xformed_name = xform_fn(src, x['dirname'], x['basename']) 
+            if xformed_name is None:
+                #if os.path.exists(filespec):
+                #    os.remove(filespec)
+                continue
+            copy_fn(
+                os.path.join(filespec),
+                xformed_name
+            )
 
 
 
